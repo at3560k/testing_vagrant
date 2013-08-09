@@ -57,6 +57,7 @@ file {'/etc/puppet/autosign.conf':
     ensure => file,
     mode => 0644,
     require => Package['puppetmaster'],
+    notify => Service['puppetmaster'],
     owner => 'root',
     group => 'root',
     content => "
@@ -65,8 +66,37 @@ file {'/etc/puppet/autosign.conf':
     force => true,
 }
 
+#  Contents are slightly modified one liner from Ubu puppetmasterd
+# v 2.7.11.  We've changed modulepath so that we can install stuff
+#  programatically without bungling up symlinks.
+file{'/etc/puppet/puppet.conf':
+    ensure => file,
+    mode => 0644,
+    require => Package['puppetmaster'],
+    notify => Service['puppetmaster'],
+    owner => 'root',
+    group => 'root',
+    content => "
+[main]
+logdir=/var/log/puppet
+vardir=/var/lib/puppet
+ssldir=/var/lib/puppet/ssl
+rundir=/var/run/puppet
+factpath=$vardir/lib/facter
+templatedir=$confdir/templates
+prerun_command=/etc/puppet/etckeeper-commit-pre
+postrun_command=/etc/puppet/etckeeper-commit-post
+modulepath=/etc/puppet/modules:/usr/share/puppet/modules:/etc/puppet/mymodules
 
+[master]
+# These are needed when the puppetmaster is run by passenger
+# # and can safely be removed if webrick is used.
+ssl_client_header = SSL_CLIENT_S_DN 
+ssl_client_verify_header = SSL_CLIENT_VERIFY
 
+",
+    force => true,
+}
 
 # Our host files... and other test only stuffs
 #  Note -- to work this way, my local desktop with puppet 
@@ -74,24 +104,55 @@ file {'/etc/puppet/autosign.conf':
 #  ln -s /data/jbrown/compare_provision/modules/testonly/ /etc/puppet/modules/
 #  
 #   Note -- you probably can't install this module over the network...
-file{ '/etc/puppet/modules/':
+file{ '/etc/puppet/mymodules/':
   ensure => link,
   target => "/vagrant/modules/",
   force  => true,
-  require => Package['puppetmaster']
+  require => Package['puppetmaster'],
+  notify => Service['puppetmaster'],
 }
+#  Keep modules free in case we use puppet module
+#
+
+# Need a notifier for when we move the files around, otherwise things get spun
+# up and the puppetmaster never detects what's happening
+service { "puppetmaster":
+   ensure => running,
+   require => Package["puppetmaster"],
+}
+
+
+include ssh
+include packages
 
 # Okay, irritating.  Ubu ships with 2.7.11, 2.7.14 has the module
 #  command built in, which will make managing things easier...
 #  For now, rather than get a source build of uppet, we use 
 #  the distros
-package { 'puppet-module':
-    ensure => 'installed',
-    provider => 'gem',
-    require => Package['puppetmaster']
-}
+#package { 'puppet-module':
+#    ensure => 'installed',
+#    provider => 'gem',
+#    require => Package['puppetmaster']
+#}
 
-include ssh
-include packages
+#  Now... the puppet stuff we use.
+#  puppet librarian requires 2.7.13 ... we're at .7.11
+#
+#package { 'librarian-puppet':
+#    ensure => 'installed',
+#    provider => 'gem',
+#    require => Package['puppetmaster']
+#}
+#
+#exec{'get_puppet_postgres':
+#    command => '/usr/bin/puppet module install puppetlabs/postgresql',
+#    cwd => '/etc/puppet/modules',
+#    require => Package['puppet-module'],
+#    creates => '/etc/puppet/modules/postgresql',
+#}
+#
+#puppet module install puppetlabs/postgresql
 
-#  Now, install the test only module we just used!
+# This is too ridiculous to manage.  Their web documentation references
+# s/w requirements and versions that don't even exist in their apt package yet
+# Writing our own modules is easy if inconvenient.
