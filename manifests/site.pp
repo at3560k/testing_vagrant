@@ -1,10 +1,5 @@
 # manifests/site.pp
 
-import 'ssh.pp'
-import 'packages.pp'
-import 'database.pp'
-
-
 # Define filebucket 'main':
 filebucket { 'main':
   path   => '/root/puppet_backup',

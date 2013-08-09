@@ -8,7 +8,6 @@
 
 class database {
 
-
     file {'motd':
       ensure  => file,
       path    => '/etc/motd',

@@ -74,9 +74,9 @@ file {'/etc/puppet/autosign.conf':
 #  ln -s /data/jbrown/compare_provision/modules/testonly/ /etc/puppet/modules/
 #  
 #   Note -- you probably can't install this module over the network...
-file{ '/etc/puppet/modules/testonly':
+file{ '/etc/puppet/modules/':
   ensure => link,
-  target => "/vagrant/modules/testonly",
+  target => "/vagrant/modules/",
   force  => true,
   require => Package['puppetmaster']
 }

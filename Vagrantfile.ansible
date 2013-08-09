@@ -1,0 +1,65 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+Vagrant.configure("2") do |config|
+  # All Vagrant configuration is done here. The most common configuration
+  # options are documented and commented below. For a complete reference,
+  # please see the online documentation at vagrantup.com.
+
+  # Every Vagrant virtual environment requires a box to build off of.
+  config.vm.box = "precise64"
+
+  # cache buckets auto detection for vagrant-cachier
+  config.cache.auto_detect = true 
+
+  # The url from where the 'config.vm.box' box will be fetched if it
+  # doesn't already exist on the user's system.
+  # config.vm.box_url = "http://domain.com/path/to/above.box"
+
+  # Note: host only networks mean no ports are blocked at all.
+  #  10.11.12/24 is vbox hostonlyif vboxnet0 on pericles
+
+  config.vm.define :ansible do|ans_config|
+    ans_config.vm.hostname = 'ansible'
+    ans_config.vm.network :private_network, ip: "10.11.12.10"
+  end
+
+  config.vm.define :appserver do |web_config|
+    web_config.vm.hostname = 'appserver'
+    web_config.vm.network :private_network, ip: "10.11.12.201"
+    # Relay HTTPD to 8080
+    web_config.vm.network :forwarded_port, guest: 80, host: 8080
+
+    # We need to run our updater in apt first or packages bork
+    web_config.vm.provision :shell, :path => "shell/bootstrap.sh"
+
+    # looks in manifests/default.pp automagically
+    web_config.vm.provision :puppet  
+
+    #web_config.vm.provision :ansible do |ansible|
+    #  ansible.playbook = "deployment/www.yml"
+    #  ansible.inventory_file = "deployment/hosts"
+    #end
+  end
+
+  config.vm.define :dbase do |db_config|
+    db_config.vm.hostname = 'dbserver'
+    db_config.vm.network :private_network, ip: "10.11.12.211"
+    # Relay PG to localhost
+    db_config.vm.network :forwarded_port, guest: 5432, host: 5432
+
+    db_config.vm.provision :puppet do |puppet|
+      # Not so automagic.
+      puppet.manifests_path = "manifests"
+      puppet.manifests_file = "database.pp"
+    end
+  end
+
+  config.vm.define :mongo do |mongo_config|
+    db_config.vm.hostname = 'mongoserver'
+    mongo_config.vm.network :private_network, ip: "10.11.12.221"
+    # Relay mongo to localhost
+    mongo_config.vm.network :forwarded_port, guest: 27017, host: 27017
+
+  end
+end
