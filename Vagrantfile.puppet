@@ -73,19 +73,86 @@ Vagrant.configure("2") do |config|
 
     # Remote server
     db_config.vm.provision :puppet_server do |puppet|
-      puppet.options = ["--verbose", "--debug"]
+      #puppet.options = ["--verbose", "--debug"]
       puppet.puppet_server = "puppet.test.edac.unm.edu"
     end
   end
 
-  #####################################
-  # mongo - via puppet master
-  #####################################
-  config.vm.define :mongo do |mongo_config|
-    mongo_config.vm.hostname = 'mongoserver'
-    mongo_config.vm.network :private_network, ip: "10.11.12.221"
-    # Relay mongo to localhost
-    mongo_config.vm.network :forwarded_port, guest: 27017, host: 27017
 
+  #####################################
+  # mongo team
+  #####################################
+  
+  # It's not that we need puppet to do this, so much as I need a way for the
+  # hosts to communicate with each other by hostname and keep this organized
+  # by something not ipaddr
+  # 
+  # vagrant up /mongo_*/
+
+  #####################################
+  # ansible driver
+  #####################################
+
+  # named so it's part of our mongo regex...
+  config.vm.define :mongo_ansible do |ans_config|
+    ans_config.vm.hostname = 'ansible.test.edac.unm.edu'
+    ans_config.vm.network :private_network, ip: "10.11.12.101"
+
+    # Forward our agent to this machine so I don't have to handle key
+    # distribution on the images
+    #
+    config.ssh.forward_agent = true
+    #  Note, we also install the pub key by vagrant's out of the box insecure key
+    #  http://github.com/mitchellh/vagrant/raw/master/keys/vagrant.pub (rename
+    #  to insecure_private_key.pub)
+    #  And add this to my locally running agent (which is forwarded over to the
+    #  vagrant box only for command & control purposes)
+
+    # Okay, I want to avoid risking 'infrastructure'...
+    #   And I'm not putting ansible on my desktop until I trust it not to
+    #   install 1000 modules that will fetch a whole git tree...
+    #
+    ans_config.vm.provision :puppet do |puppet|
+       # thick irony is thick
+       puppet.module_path = "modules"
+       puppet.manifest_file = "ansible.pp"  
+    end
   end
+
+  #####################################
+  # mongod core (mongod, replication, configuration) - via ansible master, with puppet help
+  #####################################
+
+  config.vm.define :mongo_m1 do |m1_config|
+    m1_config.vm.hostname = 'mongo1.mongo.edac.unm.edu'
+    m1_config.vm.network :private_network, ip: "10.11.12.221"
+
+    #web_config.vm.provision :ansible do |ansible|
+    #  ansible.playbook = "deployment/www.yml"
+    #  ansible.inventory_file = "deployment/hosts"
+  end
+
+  config.vm.define :mongo_m2 do |m2_config|
+    m2_config.vm.hostname = 'mongo2.mongo.edac.unm.edu'
+    m2_config.vm.network :private_network, ip: "10.11.12.222"
+  end
+
+  config.vm.define :mongo_m3 do |m3_config|
+    m3_config.vm.hostname = 'mongo3.mongo.edac.unm.edu'
+    m3_config.vm.network :private_network, ip: "10.11.12.223"
+  end
+  
+  #####################################
+  # mongos server (shard) - via ansible master, with puppet help
+  #####################################
+  config.vm.define :mongo_s1 do |s1_config|
+    s1_config.vm.hostname = 'mongos1.mongo.edac.unm.edu'
+    s1_config.vm.network :private_network, ip: "10.11.12.231"
+  end
+
+  config.vm.define :mongo_s2 do |s2_config|
+    s2_config.vm.hostname = 'mongos2.mongo.edac.unm.edu'
+    s2_config.vm.network :private_network, ip: "10.11.12.232"
+  end
+
 end

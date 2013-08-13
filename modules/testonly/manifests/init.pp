@@ -4,6 +4,11 @@ class testonly{
         ensure => 'present'
     }
 
+    host{'ansible.test.edac.unm.edu':
+        ip => '10.11.12.101',
+        ensure => 'present'
+    }
+
     host{'appserver.test.edac.unm.edu':
         ip => '10.11.12.201',
         ensure => 'present'
@@ -14,8 +19,28 @@ class testonly{
         ensure => 'present'
     }
 
-    host{'mongoserver.test.edac.unm.edu':
+    host{'mongo1.mongo.edac.unm.edu':
         ip => '10.11.12.221',
+        ensure => 'present'
+    }
+
+    host{'mongo2.mongo.edac.unm.edu':
+        ip => '10.11.12.222',
+        ensure => 'present'
+    }
+
+    host{'mongo3.mongo.edac.unm.edu':
+        ip => '10.11.12.223',
+        ensure => 'present'
+    }
+
+    host{'mongos1.mongo.edac.unm.edu':
+        ip => '10.11.12.231',
+        ensure => 'present'
+    }
+
+    host{'mongos2.mongo.edac.unm.edu':
+        ip => '10.11.12.232',
         ensure => 'present'
     }
 
