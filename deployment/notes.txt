@@ -1,0 +1,5 @@
+files almost wholly from: 
+    https://github.com/ansible/ansible-examples/tree/master/mongodb
+
+Remember to add your ssh key from vagrant's insecure key to the keychain, so the agent
+(vagrant user) is relayed to any machine that needs it.
