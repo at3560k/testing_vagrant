@@ -20,8 +20,8 @@
   file: path={{ mongodb_datadir_prefix }} owner=mongod group=mongod state=directory
 
 - name: Install the mongodb package
-#  yum: name={{ item }} state=installed
-   apt: name={{ item }} state=installed
+  #yum: name={{ item }} state=installed
+  apt: name={{ item }} state=installed
   with_items:
    #- mongo-10gen
    #- mongo-10gen-server

@@ -1,0 +1,6 @@
+when logged in as vagrant with key forwarding (we edit files...)
+
+$ cd /vagrant/deployment 
+$ ansible-playbook -i hosts site.yml  --sudo  
+
+
