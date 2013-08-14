@@ -22,7 +22,7 @@ file {'motd':
   ensure  => file,
   path    => '/etc/motd',
   mode    => 0644,
-  content => "This is the puppet server. IP address is ${ipaddress}. It thinks its
+  content => "This is the puppet server. IP address is ${ipaddress_eth1}. It thinks its
 hostname is ${fqdn}, but you might not be able to reach it there
 from your host machine. It is running ${operatingsystem} ${operatingsystemrelease} and
 Puppet ${puppetversion}.  ",
