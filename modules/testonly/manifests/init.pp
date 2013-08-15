@@ -34,14 +34,8 @@ class testonly{
         ensure => 'present'
     }
 
-    host{'mongos1.mongo.edac.unm.edu':
-        ip => '10.11.12.231',
+    host{'mongo4.mongo.edac.unm.edu':
+        ip => '10.11.12.224',
         ensure => 'present'
     }
-
-    host{'mongos2.mongo.edac.unm.edu':
-        ip => '10.11.12.232',
-        ensure => 'present'
-    }
-
 }

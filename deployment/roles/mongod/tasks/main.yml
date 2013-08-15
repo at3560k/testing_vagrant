@@ -8,7 +8,12 @@
 
   
 - name: Create the mongodb startup file
-  template: src=mongod.j2 dest=/etc/init.d/mongod-{{ inventory_hostname }} mode=0655
+  file: src=/lib/init/upstart-job dest=/etc/init.d/mongod-{{ inventory_hostname }} state=link force=true
+  delegate_to: '{{ item }}'
+  with_items: groups.replication_servers
+
+- name: Create the mongod upstart config file
+  template: src=mongod.j2 dest=/etc/init/mongod-{{ inventory_hostname }}.conf mode=0655
   delegate_to: '{{ item }}'
   with_items: groups.replication_servers
 
@@ -21,9 +26,8 @@
 - name: Copy the keyfile for authentication
   copy: src=secret dest={{ mongodb_datadir_prefix }}/secret owner=mongod group=mongod mode=0400
 
-
 - name: Start the mongodb service
-  command: creates=/var/lock/subsys/mongod-${inventory_hostname} /etc/init.d/mongod-${inventory_hostname} start
+  command: creates=/var/run/mongod-${inventory_hostname} /usr/sbin/service mongod-${inventory_hostname} start
   delegate_to: '{{ item }}'
   with_items: groups.replication_servers
 

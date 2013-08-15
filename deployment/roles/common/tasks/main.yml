@@ -1,17 +1,18 @@
 ---
 # This Playbook runs all the common plays in the deployment 
 
-- name: Create the hosts file for all machines
-  template: src=hosts.j2 dest=/etc/hosts
+#  puppet managed
+#- name: Create the hosts file for all machines
+#  template: src=hosts.j2 dest=/etc/hosts
 
-#- name: Create the repository for 10Gen  
-#  copy: src=10gen.repo.j2 dest=/etc/yum.repos.d/10gen.repo
-#
-#- name: Create the EPEL Repository.
-#  copy: src=epel.repo.j2 dest=/etc/yum.repos.d/epel.repo
-#
-#- name: Create the GPG key for EPEL
-#  copy: src=RPM-GPG-KEY-EPEL-6 dest=/etc/pki/rpm-gpg
+# Not sure why apt repository not working... but it botches so we do this with command
+- name: Create the repository for 10Gen
+  sudo: true
+  shell: "/bin/echo 'deb http://downloads-distro.mongodb.org/repo/ubuntu-upstart dist 10gen' | sudo tee /etc/apt/sources.list.d/10gen.list"
+
+- name: Install the 10gen key
+  command: /usr/bin/apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv 7F0CEB10
+  sudo: true
 
 - name: Create the mongod user
   user: name=mongod comment="MongoD"
@@ -20,17 +21,26 @@
   file: path={{ mongodb_datadir_prefix }} owner=mongod group=mongod state=directory
 
 - name: Install the mongodb package
-  #yum: name={{ item }} state=installed
-  apt: name={{ item }} state=installed
+  apt: name={{ item }} state=installed update_cache=yes cache_valid_time=120
   with_items:
-   #- mongo-10gen
-   #- mongo-10gen-server
+   - mongodb-10gen
    - bc
    - python-pip
+#   # Should I pin it?
+#   #- mongodb-10gen==2.2.3
 
 - name: Install the latest pymongo package
   pip: name=pymongo state=latest use_mirrors=no 
 
-#- name: Create the iptables file
-#  template: src=iptables.j2 dest=/etc/sysconfig/iptables
-#  notify: restart iptables 
+# OK, the ubuntu mongo dumps /etc/mongodb.conf where we don't want it
+#  and starts up the process, messing with our own ability to stop it.
+
+- name: Ensure UBU mongo is not bloody running
+  sudo: true
+  service: name=mongodb state=stopped
+
+- name: Ensure UBU mongo is out of my init...
+  file: dest=/etc/init/mongodb state=absent
+
+- name: Ensure UBU mongo.conf is out of my init...
+  file: dest=/etc/mongodb.conf state=absent

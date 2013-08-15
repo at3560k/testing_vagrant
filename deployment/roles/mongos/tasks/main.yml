@@ -2,8 +2,10 @@
 #This Playbook configures the mongos service of mongodb
 
 - name: Create the mongos startup file
-  template: src=mongos.j2 dest=/etc/init.d/mongos mode=0655
+  file: src=/lib/init/upstart-job dest=/etc/init.d/mongos state=link
 
+- name: Create the mongos upstart config file
+  template: src=mongos.j2 dest=/etc/init/mongs.conf mode=0655
 
 - name: Create the mongos configuration file
   template: src=mongos.conf.j2 dest=/etc/mongos.conf
@@ -12,7 +14,7 @@
   copy: src=roles/mongod/files/secret dest={{ mongodb_datadir_prefix }}/secret owner=mongod group=mongod mode=0400
 
 - name: Start the mongos service
-  command: creates=/var/lock/subsys/mongos /etc/init.d/mongos start
+  command: creates=/var/run/mongos.pid /usr/sbin/service mongos start
 - name: pause
   pause: seconds=20
 
