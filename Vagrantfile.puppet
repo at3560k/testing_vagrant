@@ -26,6 +26,7 @@ Vagrant.configure("2") do |config|
   config.vm.provision :puppet do |puppet|
       # looks in manifests/default.pp automagically
       puppet.module_path = "modules"
+      # Force a manual hostsfile out so these talk without using ipaddr
       puppet.manifest_file = "patchhosts.pp"
   end
  
@@ -120,7 +121,7 @@ Vagrant.configure("2") do |config|
   end
 
   #####################################
-  # mongod core (mongod, replication, configuration) - via ansible master, with puppet help
+  # mongo1:4 - via ansible master, with puppet help
   #####################################
 
   config.vm.define :mongo_m1 do |m1_config|
@@ -141,18 +142,10 @@ Vagrant.configure("2") do |config|
     m3_config.vm.hostname = 'mongo3.mongo.edac.unm.edu'
     m3_config.vm.network :private_network, ip: "10.11.12.223"
   end
-  
-  #####################################
-  # mongos server (shard) - via ansible master, with puppet help
-  #####################################
-  config.vm.define :mongo_s1 do |s1_config|
-    s1_config.vm.hostname = 'mongos1.mongo.edac.unm.edu'
-    s1_config.vm.network :private_network, ip: "10.11.12.231"
-  end
 
-  config.vm.define :mongo_s2 do |s2_config|
-    s2_config.vm.hostname = 'mongos2.mongo.edac.unm.edu'
-    s2_config.vm.network :private_network, ip: "10.11.12.232"
+  config.vm.define :mongo_m4 do |m4_config|
+    m4_config.vm.hostname = 'mongo4.mongo.edac.unm.edu'
+    m4_config.vm.network :private_network, ip: "10.11.12.224"
   end
-
+ 
 end
