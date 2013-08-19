@@ -2,7 +2,7 @@
 # This role deploys the mongod processes and sets up the replication set.
 
 - name: create data directory for mongodb
-  file: path={{ mongodb_datadir_prefix }}/mongo-{{ inventory_hostname }} state=directory owner=mongod group=mongod
+  file: path={{ mongodb_datadir_prefix }}/mongo-{{ inventory_hostname }} state=directory owner=mongodb group=mongodb recurse=yes
   delegate_to: '{{ item }}'
   with_items: groups.replication_servers
 
@@ -13,18 +13,18 @@
   with_items: groups.replication_servers
 
 - name: Create the mongod upstart config file
-  template: src=mongod.j2 dest=/etc/init/mongod-{{ inventory_hostname }}.conf mode=0655
+  template: src=mongod.j2 dest=/etc/init/mongod-{{ inventory_hostname }}.conf mode=0655 owner=root group=root
   delegate_to: '{{ item }}'
   with_items: groups.replication_servers
 
 
 - name: Create the mongodb configuration file
-  template: src=mongod.conf.j2 dest=/etc/mongod-${inventory_hostname}.conf
+  template: src=mongod.conf.j2 dest=/etc/mongod-${inventory_hostname}.conf owner=root group=root mode=0644
   delegate_to: '{{ item }}'
   with_items: groups.replication_servers
 
 - name: Copy the keyfile for authentication
-  copy: src=secret dest={{ mongodb_datadir_prefix }}/secret owner=mongod group=mongod mode=0400
+  copy: src=secret dest={{ mongodb_datadir_prefix }}/secret owner=mongodb group=mongodb mode=0400
 
 - name: Start the mongodb service
   command: creates=/var/run/mongod-${inventory_hostname} /usr/sbin/service mongod-${inventory_hostname} start

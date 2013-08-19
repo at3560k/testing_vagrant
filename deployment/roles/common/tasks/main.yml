@@ -14,11 +14,9 @@
   command: /usr/bin/apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv 7F0CEB10
   sudo: true
 
-- name: Create the mongod user
-  user: name=mongod comment="MongoD"
-
-- name: Create the data directory for the namenode metadata
-  file: path={{ mongodb_datadir_prefix }} owner=mongod group=mongod state=directory
+# We'll use the ubu user.
+#- name: Create the mongod user
+#  user: name=mongod comment="MongoD"
 
 - name: Install the mongodb package
   apt: name={{ item }} state=installed update_cache=yes cache_valid_time=120
@@ -29,18 +27,36 @@
 #   # Should I pin it?
 #   #- mongodb-10gen==2.2.3
 
+- name: Create the data directory for the namenode metadata
+  file: path={{ mongodb_datadir_prefix }} owner=mongodb group=mongodb state=directory
+
 - name: Install the latest pymongo package
   pip: name=pymongo state=latest use_mirrors=no 
 
 # OK, the ubuntu mongo dumps /etc/mongodb.conf where we don't want it
 #  and starts up the process, messing with our own ability to stop it.
 
-- name: Ensure UBU mongo is not bloody running
+#- name: Ensure UBU mongo is not bloody running
+#  sudo: true
+#  service: name=mongodb state=stopped
+
+#- name: Ensure UBU mongo is out of my init...
+#  file: dest=/etc/init/mongodb state=absent
+
+#- name: Ensure UBU mongo.conf is out of my init...
+#  file: dest=/etc/mongodb.conf state=absent
+
+#- name: Ensure UBU upstart mongo.conf is out of my init...
+#  file: dest=/etc/init/mongodb.conf state=absent
+
+#- name: Install proper mongo.conf
+#  template: src=mongodb.conf.j2 dest=/etc/mongodb.conf backup=yes
+
+# Force configured port/default to ours.
+#   If this runs twice, it puts in the port 2x, and the service will silently die.
+- name: Edit stock mongo.conf with ourt port
+  lineinfile: dest=/etc/mongodb.conf backup=yes regexp='^port = 27017' insertafter='^#port = 27017' line='port = {{ mongod_port }}' owner=root group=root
+
+- name: Now start my mongo
   sudo: true
-  service: name=mongodb state=stopped
-
-- name: Ensure UBU mongo is out of my init...
-  file: dest=/etc/init/mongodb state=absent
-
-- name: Ensure UBU mongo.conf is out of my init...
-  file: dest=/etc/mongodb.conf state=absent
+  service: name=mongodb state=restarted

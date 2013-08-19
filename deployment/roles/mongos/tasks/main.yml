@@ -5,10 +5,10 @@
   file: src=/lib/init/upstart-job dest=/etc/init.d/mongos state=link
 
 - name: Create the mongos upstart config file
-  template: src=mongos.j2 dest=/etc/init/mongs.conf mode=0655
+  template: src=mongos.j2 dest=/etc/init/mongs.conf mode=0655 owner=root group=root
 
 - name: Create the mongos configuration file
-  template: src=mongos.conf.j2 dest=/etc/mongos.conf
+  template: src=mongos.conf.j2 dest=/etc/mongos.conf owner=root group=root
 
 - name: Copy the keyfile for authentication
   copy: src=roles/mongod/files/secret dest={{ mongodb_datadir_prefix }}/secret owner=mongod group=mongod mode=0400
