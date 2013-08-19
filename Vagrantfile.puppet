@@ -49,21 +49,6 @@ Vagrant.configure("2") do |config|
   end
 
   #####################################
-  # appserver - via puppet master
-  #####################################
-  config.vm.define :appserver do |web_config|
-    web_config.vm.hostname = 'appserver'
-    web_config.vm.network :private_network, ip: "10.11.12.201"
-    # Relay HTTPD to 8080
-    web_config.vm.network :forwarded_port, guest: 80, host: 8080
-
-    web_config.vm.provision :puppet do |puppet|
-      puppet.manifests_path = "manifests"
-      puppet.manifest_file = "webapp.pp"
-    end
-  end
-
-  #####################################
   # dbase - via puppet master
   #####################################
   config.vm.define :dbase do |db_config|
@@ -124,28 +109,31 @@ Vagrant.configure("2") do |config|
   # mongo1:4 - via ansible master, with puppet help
   #####################################
 
-  config.vm.define :mongo_m1 do |m1_config|
-    m1_config.vm.hostname = 'mongo1.mongo.edac.unm.edu'
-    m1_config.vm.network :private_network, ip: "10.11.12.221"
+  numMongo = 4
+  ipAddrPrefix = "10.11.12.220"
 
-    #web_config.vm.provision :ansible do |ansible|
-    #  ansible.playbook = "deployment/www.yml"
-    #  ansible.inventory_file = "deployment/hosts"
+  1.upto(numMongo) do |num|
+    nodeName = ("mongo_n" + num.to_s).to_sym
+    config.vm.define nodeName do |node|
+      node.vm.hostname = 'mongo' + num.to_s + '.mongo.edac.unm.edu'
+      node.vm.network :private_network, ip: ipAddrPrefix + num.to_s
+      #node.vm.name = "Mongo Server: " + num.to_s
+
+      #  ansible.playbook = "deployment/www.yml"
+      #  ansible.inventory_file = "deployment/hosts"
+    end
   end
 
-  config.vm.define :mongo_m2 do |m2_config|
-    m2_config.vm.hostname = 'mongo2.mongo.edac.unm.edu'
-    m2_config.vm.network :private_network, ip: "10.11.12.222"
+  #####################################
+  # Salt base box
+  #####################################
+  config.vm.define :salt do |salt_config|
+    ans_config.vm.hostname = 'salt.test.edac.unm.edu'
+    ans_config.vm.network :private_network, ip: "10.11.12.103"
+    config.ssh.forward_agent = true
+
+    # TODO: puppet in pip, salt, ssh agent
   end
 
-  config.vm.define :mongo_m3 do |m3_config|
-    m3_config.vm.hostname = 'mongo3.mongo.edac.unm.edu'
-    m3_config.vm.network :private_network, ip: "10.11.12.223"
-  end
-
-  config.vm.define :mongo_m4 do |m4_config|
-    m4_config.vm.hostname = 'mongo4.mongo.edac.unm.edu'
-    m4_config.vm.network :private_network, ip: "10.11.12.224"
-  end
- 
 end
+
