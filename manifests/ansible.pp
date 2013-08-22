@@ -47,7 +47,7 @@ exec{'get_pip_mongo':
 file {'/etc/ansible':
     ensure => directory,
     owner => 'root',
-    force => true 
+    force => true,
 }
 
 file {'/etc/ansible/hosts':
@@ -59,7 +59,7 @@ file {'/etc/ansible/hosts':
     owner => 'root',
 }
 
-# No clue how the hell ansible would work without ssh.
+# No clue how ansible would work without ssh.
 #
 include ssh
 include packages

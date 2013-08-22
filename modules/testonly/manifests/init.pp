@@ -9,6 +9,11 @@ class testonly{
         ensure => 'present'
     }
 
+    host{'salt.test.edac.unm.edu':
+        ip => '10.11.12.102',
+        ensure => 'present'
+    }
+
     host{'appserver.test.edac.unm.edu':
         ip => '10.11.12.201',
         ensure => 'present'
@@ -36,6 +41,16 @@ class testonly{
 
     host{'mongo4.mongo.edac.unm.edu':
         ip => '10.11.12.224',
+        ensure => 'present'
+    }
+
+    host{'salt-n1.test.edac.unm.edu':
+        ip => '10.11.12.231',
+        ensure => 'present'
+    }
+
+    host{'salt-n2.edac.unm.edu':
+        ip => '10.11.12.232',
         ensure => 'present'
     }
 }

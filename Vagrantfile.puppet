@@ -1,6 +1,51 @@
 # -*- mode: ruby -*-
 # vi: set ft=ruby :
 
+# Defined:
+#
+# - puppetmaster
+#   - provisions dbase via puppet server automagically
+# - mongo_ansible
+#   - provisions mongo_n1 .. n4
+#   (mongo cluster not fully functioning yet)
+#   Log into ansible, accept ssh keys with proxied agent, and run playbook
+#      - `keychain ~/.vagrantfile/insecure_public_key`
+#      - `vagrant ssh mongo_ansible`
+#      - `cd /vagrant/deployment && ansible all -m ping`
+#      -  (accept ssh keys which I haven't added yet...)
+#      - `ansible-playbook -i hosts site.yml  --sudo`
+#      - Watch screen scroll fast
+# - salt
+#   - provisions salt_n1 .. n2
+#
+#
+#######################################################################
+#                          !!! WARNING !!!
+#
+#  Do not forget that vagrant ships with fixed SSH Keys, this is not
+#  remotely suitable for anything going anywhere near production
+#
+#######################################################################
+#
+#
+# Ongoing themes and problems
+#   - key management and accepting new nodes or installing keys
+#   - Need/Desire for more and faster caching
+#   - Installing base tools to bootstrap other tools
+#      - Probably easier solved with a few base images
+#   - Some commands really like to run as root or people with root
+#   - Instability of resources
+#     - Sometimes servers go down and update scripts fail
+#       - 10gen update server has had updates fail
+#     - Ansible had an update change behavior in development
+#     - Salt has had multiple releases in a month (and wants to deploy
+#     via curl to shell...)
+#   - Bootstrapping to bootstrap
+#     - Base image needs key management and utilities
+#     - Python/Pip/Puppet or something
+#     - Key V&V is done manually in everything without any sort
+#        of PKI/cert/signing infrastructure
+
 Vagrant.configure("2") do |config|
 
   # Every Vagrant virtual environment requires a box to build off of.
@@ -34,11 +79,14 @@ Vagrant.configure("2") do |config|
   #####################################
   # Puppet server - local
   #####################################
+  #
+  # Insecure auto signs all requests...
+  #
   config.vm.define :puppetmaster do |pp_config|
     pp_config.vm.hostname = "puppet.test.edac.unm.edu"
     pp_config.vm.network :private_network, ip: "10.11.12.100"
 
-    # Hey dog, I heard you like puppet so I provisioned puppet with your puppet
+    # Yo dawg, I heard you like puppet so I provisioned puppet with ur puppet
     pp_config.vm.provision :puppet do |puppet|
       # Local manifest, puppet apply
       puppet.manifests_path = "manifests"
@@ -76,7 +124,7 @@ Vagrant.configure("2") do |config|
   # vagrant up /mongo_*/
 
   #####################################
-  # ansible driver
+  # Ansible driver -- local
   #####################################
 
   # named so it's part of our mongo regex...
@@ -87,7 +135,7 @@ Vagrant.configure("2") do |config|
     # Forward our agent to this machine so I don't have to handle key
     # distribution on the images
     #
-    config.ssh.forward_agent = true
+    ans_config.ssh.forward_agent = true
     #  Note, we also install the pub key by vagrant's out of the box insecure key
     #  http://github.com/mitchellh/vagrant/raw/master/keys/vagrant.pub (rename
     #  to insecure_private_key.pub)
@@ -110,29 +158,51 @@ Vagrant.configure("2") do |config|
   #####################################
 
   numMongo = 4
-  ipAddrPrefix = "10.11.12.220"
+  ipAddrPrefix = "10.11.12.22" #effectively .220
 
   1.upto(numMongo) do |num|
     nodeName = ("mongo_n" + num.to_s).to_sym
     config.vm.define nodeName do |node|
+      # Look mah, no hands.  Ansible needs nothing special on these...
+      #  (although we aren't fireballing)
       node.vm.hostname = 'mongo' + num.to_s + '.mongo.edac.unm.edu'
       node.vm.network :private_network, ip: ipAddrPrefix + num.to_s
-      #node.vm.name = "Mongo Server: " + num.to_s
-
-      #  ansible.playbook = "deployment/www.yml"
-      #  ansible.inventory_file = "deployment/hosts"
     end
   end
 
   #####################################
-  # Salt base box
+  # Salt master box -- local
   #####################################
-  config.vm.define :salt do |salt_config|
-    ans_config.vm.hostname = 'salt.test.edac.unm.edu'
-    ans_config.vm.network :private_network, ip: "10.11.12.103"
+  config.vm.define :salt_shaker do |salt_config|
+    # Magic host name is magic.
+    salt_config.vm.hostname = 'salt.test.edac.unm.edu'
+    salt_config.vm.network :private_network, ip: "10.11.12.102"
     config.ssh.forward_agent = true
+    # TODO: Remember ssh agent
+    salt_config.vm.provision :puppet do |puppet|
+       puppet.module_path = "modules"
+       puppet.manifest_file = "salt.pp"  
+    end
+  end
 
-    # TODO: puppet in pip, salt, ssh agent
+  #####################################
+  # Salt minion boxen
+  #####################################
+  numMinions = 2
+  saltIpAddrPrefix = "10.11.12.23" # effectively .230
+
+  1.upto(numMinions) do |num|
+    nodeName = ("salt_n" + num.to_s).to_sym
+    config.vm.define nodeName do |node_conf|
+      node_conf.vm.hostname = 'salt-n' + num.to_s + '.test.edac.unm.edu'
+      node_conf.vm.network :private_network, ip: saltIpAddrPrefix + num.to_s
+      node_conf.ssh.forward_agent = true
+
+      node_conf.vm.provision :puppet do |puppet|
+         puppet.module_path = "modules"
+         puppet.manifest_file = "snode.pp"  
+      end
+    end
   end
 
 end

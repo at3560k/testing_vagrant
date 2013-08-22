@@ -19,7 +19,7 @@
 #  user: name=mongod comment="MongoD"
 
 - name: Install the mongodb package
-  apt: name={{ item }} state=installed update_cache=yes cache_valid_time=120
+  apt: name={{ item }} state=installed update_cache=yes
   with_items:
    - mongodb-10gen
    - bc
