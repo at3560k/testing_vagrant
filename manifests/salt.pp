@@ -30,7 +30,6 @@ package{'python-pip':
 }
 
 include ssh
-include packages
 include saltnode
 
 # needs salt node package to have the PPA for master...
@@ -43,3 +42,16 @@ exec{'accept_my_own_key':
   command => "/usr/bin/sudo salt-key -A -y",
   require => Package["salt-master"],
 }
+
+file{'/srv/salt':
+  ensure => "link",
+  target => "/vagrant/salt",
+  require => Package["salt-master"],
+}
+
+# We will recreate our packages with salt.
+#   (but not ssh or salt node because bootstrapping by bootstrapping...)
+# include packages
+#
+# cd /srv/salt && sudo su
+# salt '*' state.sls packages

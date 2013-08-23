@@ -1,7 +1,6 @@
 ## snode.pp ##
 
 include ssh
-include packages 
 include saltnode
 
 filebucket { 'main':
@@ -24,7 +23,8 @@ file {'motd':
 # Punch out the defaults
 exec {'patch_salt_minion_conf':
     command => "/usr/bin/sudo /bin/sed -i 's/^#master: salt$/master: salt.test.edac.unm.edu/' /etc/salt/minion",
-    require => [Class['saltnode']]
+    require => [Class['saltnode']],
+    notify => Service['salt-minion'],
 } 
 
 file{ "/etc/salt/minion":
@@ -40,3 +40,4 @@ service{'salt-minion':
     require => [Class['saltnode']]
 }
 
+#include packages 
