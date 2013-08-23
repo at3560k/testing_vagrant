@@ -34,6 +34,9 @@ needed-pkgs:   # any name
     - user: wwwrun
     
 # Never runs correctly
+#
+# https://github.com/saltstack/salt/issues?labels=High+Severity&page=1&state=open
+#   39 open high severity bugs.  To hell with this.
 builder:
   cmd.script:
     - name: salt://fema/builder.sh
@@ -43,5 +46,6 @@ builder:
     - group: wheel
     - shell: /bin/bash
     - stateful: True
+
 
 
