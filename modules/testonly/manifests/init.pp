@@ -49,8 +49,14 @@ class testonly{
         ensure => 'present'
     }
 
-    host{'salt-n2.edac.unm.edu':
+    host{'salt-n2.test.edac.unm.edu':
         ip => '10.11.12.232',
         ensure => 'present'
     }
+
+    host{'fema.test.edac.unm.edu':
+        ip => '10.11.12.238',
+        ensure => 'present'
+    }
+
 }

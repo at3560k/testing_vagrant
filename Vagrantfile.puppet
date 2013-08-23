@@ -17,6 +17,11 @@
 #      - Watch screen scroll fast
 # - salt
 #   - provisions salt_n1 .. n2
+#   - provisions salt_mike (web)
+#   - Login to salt_shaker
+#     - sudo salt-key -L
+#     - sudo salt-key -y -A
+#     - sudo salt-run state.over (fema)
 #
 #
 #######################################################################
@@ -45,6 +50,7 @@
 #     - Python/Pip/Puppet or something
 #     - Key V&V is done manually in everything without any sort
 #        of PKI/cert/signing infrastructure
+#   - Systems updating themself... "salt '*' pkg.install fromrepo=epel-testing salt-minion "
 
 Vagrant.configure("2") do |config|
 
@@ -202,6 +208,20 @@ Vagrant.configure("2") do |config|
          puppet.module_path = "modules"
          puppet.manifest_file = "snode.pp"  
       end
+    end
+  end
+
+  config.vm.define :salt_mike do |mike|
+    # Magic host name is magic.
+    mike.vm.hostname = 'fema.test.edac.unm.edu'
+    mike.vm.network :private_network, ip: "10.11.12.238"
+    mike.vm.network :forwarded_port, guest: 8080, host: 80 # test apache
+    config.ssh.forward_agent = true
+
+    # Install salt...
+    mike.vm.provision :puppet do |puppet|
+       puppet.module_path = "modules"
+       puppet.manifest_file = "snode.pp"  
     end
   end
 
